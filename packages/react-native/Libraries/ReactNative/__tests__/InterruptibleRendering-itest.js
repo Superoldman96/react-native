@@ -7,6 +7,7 @@
  * @flow strict-local
  * @format
  * @oncall react_native
+ * @fantom_flags fixMappingOfEventPrioritiesBetweenFabricAndReact:true
  */
 
 import 'react-native/Libraries/Core/InitializeCore';
@@ -43,18 +44,16 @@ describe('discrete event category', () => {
       if (interruptRendering) {
         interruptRendering = false;
         const element = ensureReactNativeElement(textInputRef.current);
-        Fantom.runOnUIThread(() => {
-          Fantom.enqueueNativeEvent(
-            element,
-            'change',
-            {
-              text: 'update from native',
-            },
-            {
-              category: NativeEventCategory.Discrete,
-            },
-          );
-        });
+        Fantom.dispatchNativeEvent(
+          element,
+          'change',
+          {
+            text: 'update from native',
+          },
+          {
+            category: NativeEventCategory.Discrete,
+          },
+        );
         // We must schedule a task that is run right after the above native event is
         // processed to be able to observe the results of rendering.
         Fantom.scheduleTask(afterUpdate);
@@ -149,21 +148,19 @@ describe('continuous event category', () => {
       if (interruptRendering) {
         interruptRendering = false;
         const element = ensureReactNativeElement(textInputRef.current);
-        Fantom.runOnUIThread(() => {
-          Fantom.enqueueNativeEvent(
-            element,
-            'selectionChange',
-            {
-              selection: {
-                start: 1,
-                end: 5,
-              },
+        Fantom.dispatchNativeEvent(
+          element,
+          'selectionChange',
+          {
+            selection: {
+              start: 1,
+              end: 5,
             },
-            {
-              category: NativeEventCategory.Continuous,
-            },
-          );
-        });
+          },
+          {
+            category: NativeEventCategory.Continuous,
+          },
+        );
       }
       useEffect(() => {
         effectMock({text, deferredText});
@@ -217,8 +214,8 @@ describe('continuous event category', () => {
       deferredText: 'first render',
     });
     expect(effectMock.mock.calls[1][0]).toEqual({
-      text: 'initial text',
-      deferredText: 'transition',
+      text: 'start: 1, end: 5',
+      deferredText: 'first render',
     });
     expect(effectMock.mock.calls[2][0]).toEqual({
       text: 'start: 1, end: 5',
